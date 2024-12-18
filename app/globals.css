@@ -17,3 +17,19 @@ body {
   --sh-property: #a7a7a7;
   --sh-entity: #a7a7a7;
 }
+
+@layer utilities {
+  .scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .scrollbar::-webkit-scrollbar-track {
+    border-radius: 100vh;
+    background: #232323;
+  }
+
+  .scrollbar::-webkit-scrollbar-thumb {
+    background: #454545;
+    border-radius: 100vh;
+  }
+}
