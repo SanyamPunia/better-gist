@@ -2,13 +2,19 @@ import { notFound } from "next/navigation";
 import { getSnippet } from "@/app/actions";
 import { CodeEditor } from "@/components/code-editor";
 import { ArrowUpRight } from "lucide-react";
+import { Metadata } from "next";
 
 interface PageProps {
   params: { id: string };
 }
 
+export const metadata: Metadata = {
+  title: "snippet | better-gist",
+};
+
 export default async function SnippetPage({ params }: PageProps) {
-  const snippet = await getSnippet(params.id);
+  const { id } = await params;
+  const snippet = await getSnippet(id);
 
   if (!snippet) {
     notFound();

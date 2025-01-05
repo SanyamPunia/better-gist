@@ -1,5 +1,5 @@
 {
-  "name": "code-editor",
+  "name": "better-gist",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
+  },
+  "repository": {
+    "url": "https://github.com/SanyamPunia/better-gist"
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.2",
