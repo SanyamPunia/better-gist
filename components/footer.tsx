@@ -2,7 +2,7 @@ import React from "react";
 
 const Footer = () => {
   return (
-    <div className="flex justify-between items-center px-3 py-2 border-t   border-zinc-800">
+    <div className="flex justify-between items-center gap-3 px-3 py-2 border-t   border-zinc-800">
       <div className="text-xs text-zinc-500">
         Note: Shared snippets are automatically deleted after{" "}
         <span className="underline underline-offset-2">some days</span>.
