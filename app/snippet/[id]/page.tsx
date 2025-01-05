@@ -5,7 +5,7 @@ import { ArrowUpRight } from "lucide-react";
 import { Metadata } from "next";
 
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export const metadata: Metadata = {
