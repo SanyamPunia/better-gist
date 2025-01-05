@@ -10,6 +10,7 @@ import { Copy, Share, Check } from "lucide-react";
 import { shareSnippet } from "@/app/actions";
 import { FileIcon, defaultStyles } from "react-file-icon";
 import { core } from "@/theme";
+import Footer from "./footer";
 
 export function CodeEditor({
   initialCode = "// Write your code here",
@@ -172,10 +173,7 @@ export function CodeEditor({
         }}
       />
 
-      <div className="text-xs text-zinc-500 px-3 py-2 border-t border-zinc-800">
-        Note: Shared snippets are automatically deleted after{" "}
-        <span className="underline underline-offset-2">some days</span>.
-      </div>
+      <Footer />
     </div>
   );
 }
