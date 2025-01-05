@@ -29,4 +29,4 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 
 ### TO-DO
 
-[ ] add scheduling function in supabase perform auto-deletion
+- [ ] add scheduling function in supabase perform auto-deletion
