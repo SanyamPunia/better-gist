@@ -24,7 +24,6 @@ export function CodeEditor({
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
   const [shareStatus, setShareStatus] = useState<"idle" | "shared">("idle");
   const [fileName, setFileName] = useState(initialFileName);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const getFileExtension = (filename: string) => {
     return filename.slice(((filename.lastIndexOf(".") - 1) >>> 0) + 2);
@@ -49,14 +48,12 @@ export function CodeEditor({
     const link = await shareSnippet(code, fileName);
     await navigator.clipboard.writeText(link);
     setShareStatus("shared");
-    setToastMessage("URL copied to clipboard");
     setTimeout(() => setShareStatus("idle"), 2000);
   };
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(code);
     setCopyStatus("copied");
-    setToastMessage("Code copied to clipboard");
     setTimeout(() => setCopyStatus("idle"), 2000);
   };
 

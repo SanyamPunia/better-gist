@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-950">
+    <div className="min-h-screen flex items-center justify-center">
       <motion.div
         className="w-[32rem] max-w-full px-4"
         initial={{ opacity: 0, y: 20 }}
