@@ -11,7 +11,7 @@ export interface FileTabProps {
   disableFileNameInput: boolean;
   onFileClick: (index: number) => void;
   onFileNameChange: (index: number, newName: string) => void;
-  onFileDelete: (index: number) => void;
+  onFileDelete?: (index: number) => void;
 }
 
 export interface ActionButtonsProps {

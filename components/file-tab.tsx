@@ -50,7 +50,7 @@ export const FileTab: React.FC<FileTabProps> = ({
         disabled={isReadOnly}
         placeholder="untitled.js"
       />
-      {!isReadOnly && (
+      {onFileDelete && !isReadOnly && (
         <button
           onClick={(e) => {
             e.stopPropagation();

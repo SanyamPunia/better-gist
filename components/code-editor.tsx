@@ -123,7 +123,7 @@ export function CodeEditor({
             disableFileNameInput={disableFileNameInput}
             onFileClick={setActiveFileIndex}
             onFileNameChange={updateFileName}
-            onFileDelete={deleteFile}
+            onFileDelete={files.length > 1 ? deleteFile : undefined}
           />
         ))}
         {!isReadOnly && (
