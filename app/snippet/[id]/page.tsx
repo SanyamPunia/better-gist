@@ -1,23 +1,42 @@
+"use client";
+
 import { notFound } from "next/navigation";
 import { getSnippet } from "@/app/actions";
 import { CodeEditor } from "@/components/code-editor";
 import { ArrowUpRight } from "lucide-react";
-import { Metadata } from "next";
+import { useEffect, useState } from "react";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export const metadata: Metadata = {
-  title: "snippet | better-gist",
-};
+export default function SnippetPage({ params }: PageProps) {
+  const [files, setFiles] = useState<
+    { name: string; content: string }[] | null
+  >(null);
+  const [currentFileName, setCurrentFileName] = useState<string>("");
 
-export default async function SnippetPage({ params }: PageProps) {
-  const { id } = await params;
-  const snippet = await getSnippet(id);
+  useEffect(() => {
+    async function fetchSnippet() {
+      const { id } = await params;
+      const fetchedFiles = await getSnippet(id);
+      if (!fetchedFiles || fetchedFiles.length === 0) {
+        notFound();
+      }
+      setFiles(fetchedFiles);
+      setCurrentFileName(fetchedFiles[0].name);
+    }
+    fetchSnippet();
+  }, [params]);
 
-  if (!snippet) {
-    notFound();
+  useEffect(() => {
+    document.title = currentFileName
+      ? `${currentFileName} | better-gist`
+      : "snippet | better-gist";
+  }, [currentFileName]);
+
+  if (!files) {
+    return <div>Loading...</div>;
   }
 
   return (
@@ -34,9 +53,10 @@ export default async function SnippetPage({ params }: PageProps) {
           </a>
         </div>
         <CodeEditor
-          initialCode={snippet.code}
-          initialFileName={snippet.fileName}
+          initialFiles={files}
           isReadOnly={true}
+          onFileChange={setCurrentFileName}
+          disableFileNameInput={true}
         />
       </div>
     </div>

@@ -1,18 +1,22 @@
 "use server";
 
+import { CustomUniqueForge } from "unique-forge";
 import { supabase } from "@/lib/supabase";
-import { UniqueForge } from "unique-forge";
 
-export async function shareSnippet(
-  code: string,
-  fileName: string
-): Promise<string> {
-  const forge = new UniqueForge();
+interface File {
+  name: string;
+  content: string;
+}
+
+export async function shareSnippet(files: File[]): Promise<string> {
+  const forge = new CustomUniqueForge({
+    size: 10,
+  });
   const id = forge.generate();
 
   const { error } = await supabase
     .from("snippets")
-    .insert({ id, code, file_name: fileName });
+    .insert({ id, files: JSON.stringify(files) });
 
   if (error) {
     console.error("Error inserting snippet:", error);
@@ -22,12 +26,10 @@ export async function shareSnippet(
   return `${process.env.NEXT_PUBLIC_BASE_URL}/snippet/${id}`;
 }
 
-export async function getSnippet(
-  id: string
-): Promise<{ code: string; fileName: string } | null> {
+export async function getSnippet(id: string): Promise<File[] | null> {
   const { data, error } = await supabase
     .from("snippets")
-    .select("code, file_name")
+    .select("files")
     .eq("id", id)
     .single();
 
@@ -36,5 +38,5 @@ export async function getSnippet(
     return null;
   }
 
-  return data ? { code: data.code, fileName: data.file_name } : null;
+  return data?.files ? JSON.parse(data.files) : null;
 }

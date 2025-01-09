@@ -1,128 +1,149 @@
 "use client";
 
-import React, { JSX, useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
-import { WindowControls } from "./window-controls";
 import { EditorView } from "@codemirror/view";
-import { motion, AnimatePresence } from "framer-motion";
-import { Copy, Share, Check } from "lucide-react";
+import { Plus } from "lucide-react";
 import { shareSnippet } from "@/app/actions";
-import { FileIcon, defaultStyles } from "react-file-icon";
 import { core } from "@/theme";
+import { WindowControls } from "./window-controls";
+import { FileTab } from "./file-tab";
+import { ActionButtons } from "./action-buttons";
 import Footer from "./footer";
+import { File } from "../types/editor";
+import { detectFunctionName } from "@/lib/utils";
+
+interface CodeEditorProps {
+  initialFiles?: File[];
+  isReadOnly?: boolean;
+  onFileChange?: (fileName: string) => void;
+  disableFileNameInput?: boolean;
+}
 
 export function CodeEditor({
-  initialCode = "// Write your code here",
-  initialFileName = "untitled.js",
+  initialFiles,
   isReadOnly = false,
-}: {
-  initialCode?: string;
-  initialFileName?: string;
-  isReadOnly?: boolean;
-}) {
-  const [code, setCode] = useState(initialCode);
+  onFileChange,
+  disableFileNameInput = false,
+}: CodeEditorProps) {
+  const [files, setFiles] = useState<File[]>(
+    initialFiles || [
+      { name: "untitled.js", content: "// Write your code here" },
+    ]
+  );
+  const [activeFileIndex, setActiveFileIndex] = useState(0);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
-  const [shareStatus, setShareStatus] = useState<"idle" | "shared">("idle");
-  const [fileName, setFileName] = useState(initialFileName);
+  const [shareStatus, setShareStatus] = useState<"idle" | "loading" | "shared">(
+    "idle"
+  );
 
-  const getFileExtension = (filename: string) => {
-    return filename.slice(((filename.lastIndexOf(".") - 1) >>> 0) + 2);
-  };
-
-  const getFileIcon = (extension: string) => {
-    const iconMap: { [key: string]: JSX.Element } = {
-      js: <FileIcon extension="js" {...defaultStyles.js} />,
-      ts: <FileIcon extension="ts" {...defaultStyles.ts} />,
-      html: <FileIcon extension="html" {...defaultStyles.html} />,
-      css: <FileIcon extension="css" {...defaultStyles.css} />,
-      json: <FileIcon extension="json" {...defaultStyles.json} />,
-    };
-    return (
-      iconMap[extension] || (
-        <FileIcon extension={extension} {...defaultStyles.txt} />
-      )
-    );
-  };
+  useEffect(() => {
+    if (onFileChange) {
+      onFileChange(files[activeFileIndex].name);
+    }
+  }, [activeFileIndex, files, onFileChange]);
 
   const handleShare = async () => {
-    const link = await shareSnippet(code, fileName);
-    await navigator.clipboard.writeText(link);
-    setShareStatus("shared");
+    setShareStatus("loading");
+    try {
+      const link = await shareSnippet(files);
+      await navigator.clipboard.writeText(link);
+      setShareStatus("shared");
+    } catch (error) {
+      console.error("Error sharing snippet:", error);
+      setShareStatus("idle");
+    }
     setTimeout(() => setShareStatus("idle"), 2000);
   };
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(code);
+    await navigator.clipboard.writeText(files[activeFileIndex].content);
     setCopyStatus("copied");
     setTimeout(() => setCopyStatus("idle"), 2000);
+  };
+
+  const addNewFile = () => {
+    const newFileName = `untitled${files.length + 1}.js`;
+    setFiles([
+      ...files,
+      { name: newFileName, content: "// Write your code here" },
+    ]);
+    setActiveFileIndex(files.length);
+  };
+
+  const updateFileName = (index: number, newName: string) => {
+    const updatedFiles = [...files];
+    updatedFiles[index].name = newName;
+    setFiles(updatedFiles);
+    if (onFileChange && index === activeFileIndex) {
+      onFileChange(newName);
+    }
+  };
+
+  const updateFileContent = useCallback(
+    (index: number, newContent: string) => {
+      const updatedFiles = [...files];
+      updatedFiles[index].content = newContent;
+
+      // detect file name
+      const detectedName = detectFunctionName(newContent);
+      if (detectedName && updatedFiles[index].name.startsWith("untitled")) {
+        updatedFiles[index].name = `${detectedName}.js`;
+      }
+
+      setFiles(updatedFiles);
+    },
+    [files]
+  );
+
+  const deleteFile = (index: number) => {
+    if (files.length > 1) {
+      const newFiles = files.filter((_, i) => i !== index);
+      setFiles(newFiles);
+      if (activeFileIndex >= newFiles.length) {
+        setActiveFileIndex(newFiles.length - 1);
+      } else if (activeFileIndex > index) {
+        setActiveFileIndex(activeFileIndex - 1);
+      }
+    }
   };
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
       <WindowControls />
-      <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-800">
-        <div className="flex items-center flex-grow">
-          <div className="w-4 h-4 mr-2">
-            {getFileIcon(getFileExtension(fileName))}
-          </div>
-          <input
-            type="text"
-            value={fileName}
-            onChange={(e) => setFileName(e.target.value)}
-            className="bg-transparent text-zinc-300 text-sm focus:outline-none w-full"
-            disabled={isReadOnly}
+      <div className="flex items-center px-2 py-1 border-b border-zinc-800 overflow-x-auto">
+        {files.map((file, index) => (
+          <FileTab
+            key={index}
+            file={file}
+            index={index}
+            isActive={index === activeFileIndex}
+            isReadOnly={isReadOnly}
+            disableFileNameInput={disableFileNameInput}
+            onFileClick={setActiveFileIndex}
+            onFileNameChange={updateFileName}
+            onFileDelete={deleteFile}
           />
-        </div>
-        <div className="flex gap-2">
-          <motion.button
-            onClick={handleCopy}
-            className="text-zinc-400 hover:text-zinc-200 focus:outline-none"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+        ))}
+        {!isReadOnly && (
+          <button
+            onClick={addNewFile}
+            className="text-zinc-400 hover:text-zinc-200 focus:outline-none ml-1"
           >
-            <AnimatePresence mode="wait">
-              {copyStatus === "idle" ? (
-                <Copy key="copy" className="h-4 w-4" />
-              ) : (
-                <motion.div
-                  key="copied"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  exit={{ scale: 0 }}
-                >
-                  <Check className="h-4 w-4 text-green-500" />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.button>
-          {!isReadOnly && (
-            <motion.button
-              onClick={handleShare}
-              className="text-zinc-400 hover:text-zinc-200 focus:outline-none"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <AnimatePresence mode="wait">
-                {shareStatus === "idle" ? (
-                  <Share key="share" className="h-4 w-4" />
-                ) : (
-                  <motion.div
-                    key="shared"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    exit={{ scale: 0 }}
-                  >
-                    <Check className="h-4 w-4 text-green-500" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.button>
-          )}
-        </div>
+            <Plus className="h-3 w-3" />
+          </button>
+        )}
       </div>
+      <ActionButtons
+        isReadOnly={isReadOnly}
+        onCopy={handleCopy}
+        onShare={handleShare}
+        copyStatus={copyStatus}
+        shareStatus={shareStatus}
+      />
       <CodeMirror
-        value={code}
+        value={files[activeFileIndex].content}
         height="400px"
         theme={core}
         editable={!isReadOnly}
@@ -163,7 +184,7 @@ export function CodeEditor({
             },
           }),
         ]}
-        onChange={(value) => setCode(value)}
+        onChange={(value) => updateFileContent(activeFileIndex, value)}
         className="overflow-hidden font-mono text-xs outline-none bg-none"
         basicSetup={{
           lineNumbers: false,
@@ -172,7 +193,6 @@ export function CodeEditor({
           autocompletion: false,
         }}
       />
-
       <Footer />
     </div>
   );
