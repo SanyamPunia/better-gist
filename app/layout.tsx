@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
     "code sharing",
     "developer tools",
     "programming",
-    "gist"
+    "gist",
   ],
   authors: [{ name: "sanyam punia" }],
   openGraph: {
@@ -80,6 +81,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-zinc-950`}
       >
         {children}
+        <Analytics />
       </body>
     </html>
   );
