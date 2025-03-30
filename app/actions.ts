@@ -2,13 +2,24 @@
 
 import { CustomUniqueForge } from "unique-forge";
 import { supabase } from "@/lib/supabase";
+import { verifyRecaptcha } from "@/lib/recaptcha";
 
 interface File {
   name: string;
   content: string;
 }
 
-export async function shareSnippet(files: File[]): Promise<string> {
+export async function shareSnippet(
+  files: File[],
+  recaptchaToken: string
+): Promise<string> {
+  // verify reCAPTCHA token
+  const isValid = await verifyRecaptcha(recaptchaToken);
+
+  if (!isValid) {
+    throw new Error("reCAPTCHA verification failed. Please try again.");
+  }
+
   const forge = new CustomUniqueForge({
     size: 10,
     alphabet: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",

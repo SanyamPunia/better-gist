@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { EditorView } from "@codemirror/view";
-import { Plus } from "lucide-react";
+import { AlertCircle, Plus } from "lucide-react";
 import { shareSnippet } from "@/app/actions";
 import { core } from "@/theme";
 import { WindowControls } from "./window-controls";
@@ -13,6 +13,7 @@ import { ActionButtons } from "./action-buttons";
 import Footer from "./footer";
 import { File } from "../types/editor";
 import { detectFunctionName } from "@/lib/utils";
+import { ReCaptcha } from "./recaptcha"
 
 interface CodeEditorProps {
   initialFiles?: File[];
@@ -34,9 +35,10 @@ export function CodeEditor({
   );
   const [activeFileIndex, setActiveFileIndex] = useState(0);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
-  const [shareStatus, setShareStatus] = useState<"idle" | "loading" | "shared">(
-    "idle"
-  );
+  const [shareStatus, setShareStatus] = useState<"idle" | "loading" | "shared" | "error">("idle")
+  const [recaptchaToken, setRecaptchaToken] = useState<string>("")
+  const [showRecaptcha, setShowRecaptcha] = useState<boolean>(false)
+  const [errorMessage, setErrorMessage] = useState<string>("")
 
   useEffect(() => {
     if (onFileChange) {
@@ -44,17 +46,40 @@ export function CodeEditor({
     }
   }, [activeFileIndex, files, onFileChange]);
 
+
+  const handleRecaptchaChange = (token: string) => {
+    setRecaptchaToken(token)
+  }
+
   const handleShare = async () => {
+    if (showRecaptcha && !recaptchaToken) {
+      setErrorMessage("Please complete the reCAPTCHA verification")
+      return
+    }
+
     setShareStatus("loading");
     try {
-      const link = await shareSnippet(files);
+      const link = await shareSnippet(files, recaptchaToken)
       await navigator.clipboard.writeText(link);
       setShareStatus("shared");
+      setShowRecaptcha(false)
+      setRecaptchaToken("")
+
     } catch (error) {
       console.error("Error sharing snippet:", error);
-      setShareStatus("idle");
+      setShareStatus("error")
+      setErrorMessage(error instanceof Error ? error.message : "Failed to share snippet")
+
+      if (error instanceof Error && error.message.includes("reCAPTCHA")) {
+        setShowRecaptcha(true)
+      }
     }
-    setTimeout(() => setShareStatus("idle"), 2000);
+    setTimeout(() => {
+      if (shareStatus === "shared" || shareStatus === "error") {
+        setShareStatus("idle")
+        setErrorMessage("")
+      }
+    }, 3000)
   };
 
   const handleCopy = async () => {
@@ -142,6 +167,35 @@ export function CodeEditor({
         copyStatus={copyStatus}
         shareStatus={shareStatus}
       />
+
+      {showRecaptcha && !isReadOnly && (
+        <div className="border-t border-zinc-800 p-4">
+          <ReCaptcha siteKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""} onChange={handleRecaptchaChange} />
+          {errorMessage && (
+            <div className="flex items-center justify-center text-red-500 text-xs mt-2">
+              <AlertCircle className="h-3 w-3 mr-1" />
+              {errorMessage}
+            </div>
+          )}
+          <div className="flex justify-center mt-2">
+            <button
+              onClick={handleShare}
+              className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs rounded px-4 py-2 focus:outline-none"
+              disabled={!recaptchaToken || shareStatus === "loading"}
+            >
+              {shareStatus === "loading" ? "Sharing..." : "Confirm Share"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {shareStatus === "error" && !showRecaptcha && (
+        <div className="flex items-center justify-center text-red-500 text-xs p-2 border-t border-zinc-800">
+          <AlertCircle className="h-3 w-3 mr-1" />
+          {errorMessage || "Failed to share snippet. Please try again."}
+        </div>
+      )}
+      
       <CodeMirror
         value={files[activeFileIndex].content}
         height="400px"
@@ -176,9 +230,9 @@ export function CodeEditor({
               backgroundColor: "transparent",
             },
             "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection":
-              {
-                backgroundColor: "#036dd626",
-              },
+            {
+              backgroundColor: "#036dd626",
+            },
             ".cm-scrollbar": {
               display: "none",
             },

@@ -33,7 +33,7 @@ export default function Home() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
-          {isLoading ? (
+          {/* {isLoading ? (
             <div className="flex items-center justify-end gap-1 mb-2">
               <Skeleton className="h-4 w-56 rounded-full bg-zinc-800" />
             </div>
@@ -48,7 +48,7 @@ export default function Home() {
                 snippets created and shared
               </div>
             )
-          )}
+          )} */}
           <CodeEditor />
         </motion.div>
       </div>

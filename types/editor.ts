@@ -19,5 +19,5 @@ export interface ActionButtonsProps {
   onCopy: () => void;
   onShare: () => void;
   copyStatus: "idle" | "copied";
-  shareStatus: "idle" | "loading" | "shared";
+  shareStatus: "idle" | "loading" | "shared" | "error";
 }
