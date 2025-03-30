@@ -1,11 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { CodeEditor } from "@/components/code-editor";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import { getSnippetCount } from "./actions";
-import { TrendingUp } from "lucide-react";
-import { Skeleton } from "@/components/skeleton";
 
 export default function Home() {
   const [snippetCount, setSnippetCount] = useState<number | null>(null);

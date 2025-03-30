@@ -13,6 +13,7 @@ declare global {
         grecaptcha: {
             ready: (callback: () => void) => void
             execute: (siteKey: string, options: { action: string }) => Promise<string>
+            // eslint-disable-next-line  @typescript-eslint/no-explicit-any
             render: (container: string | HTMLElement, options: any) => number
         }
         onRecaptchaLoad: () => void
