@@ -2,26 +2,26 @@
 
 import { CodeEditor } from "@/components/code-editor";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
-import { getSnippetCount } from "./actions";
+// import { useEffect, useState } from "react";
+// import { getSnippetCount } from "./actions";
 
 export default function Home() {
-  const [snippetCount, setSnippetCount] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // const [snippetCount, setSnippetCount] = useState<number | null>(null);
+  // const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchSnippetCount() {
-      try {
-        const count = await getSnippetCount();
-        setSnippetCount(count);
-      } catch (error) {
-        console.error("Failed to fetch snippet count:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchSnippetCount();
-  }, []);
+  // useEffect(() => {
+  //   async function fetchSnippetCount() {
+  //     try {
+  //       const count = await getSnippetCount();
+  //       setSnippetCount(count);
+  //     } catch (error) {
+  //       console.error("Failed to fetch snippet count:", error);
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   }
+  //   fetchSnippetCount();
+  // }, []);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center">
