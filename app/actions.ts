@@ -2,22 +2,19 @@
 
 import { CustomUniqueForge } from "unique-forge";
 import { supabase } from "@/lib/supabase";
-import { verifyRecaptcha } from "@/lib/recaptcha";
+import { rateLimit } from "@/lib/rate-limit";
 
 interface File {
   name: string;
   content: string;
 }
 
-export async function shareSnippet(
-  files: File[],
-  recaptchaToken: string
-): Promise<string> {
-  // verify reCAPTCHA token
-  const isValid = await verifyRecaptcha(recaptchaToken);
+export async function shareSnippet(files: File[]): Promise<string> {
+  // rate limiting
+  const { success } = await rateLimit();
 
-  if (!isValid) {
-    throw new Error("reCAPTCHA verification failed. Please try again.");
+  if (!success) {
+    throw new Error(`Rate limit exceeded. Please try again later.`);
   }
 
   const forge = new CustomUniqueForge({

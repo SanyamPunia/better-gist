@@ -1,19 +1,19 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import CodeMirror from "@uiw/react-codemirror";
+import { shareSnippet } from "@/app/actions";
+import { detectFunctionName } from "@/lib/utils";
+import { core } from "@/theme";
 import { javascript } from "@codemirror/lang-javascript";
 import { EditorView } from "@codemirror/view";
+import CodeMirror from "@uiw/react-codemirror";
 import { AlertCircle, Plus } from "lucide-react";
-import { shareSnippet } from "@/app/actions";
-import { core } from "@/theme";
-import { WindowControls } from "./window-controls";
-import { FileTab } from "./file-tab";
-import { ActionButtons } from "./action-buttons";
-import Footer from "./footer";
+import { useCallback, useEffect, useState } from "react";
 import { File } from "../types/editor";
-import { detectFunctionName } from "@/lib/utils";
-import { ReCaptcha } from "./recaptcha"
+import { ActionButtons } from "./action-buttons";
+import { FileTab } from "./file-tab";
+import Footer from "./footer";
+import { SecurityChallenge } from "./security-challenge";
+import { WindowControls } from "./window-controls";
 
 interface CodeEditorProps {
   initialFiles?: File[];
@@ -36,8 +36,8 @@ export function CodeEditor({
   const [activeFileIndex, setActiveFileIndex] = useState(0);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
   const [shareStatus, setShareStatus] = useState<"idle" | "loading" | "shared" | "error">("idle")
-  const [recaptchaToken, setRecaptchaToken] = useState<string>("")
-  const [showRecaptcha, setShowRecaptcha] = useState<boolean>(false)
+  const [showChallenge, setShowChallenge] = useState<boolean>(false)
+  const [isVerified, setIsVerified] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string>("")
 
   useEffect(() => {
@@ -47,32 +47,30 @@ export function CodeEditor({
   }, [activeFileIndex, files, onFileChange]);
 
 
-  const handleRecaptchaChange = (token: string) => {
-    setRecaptchaToken(token)
+  const handleVerify = (verified: boolean) => {
+    setIsVerified(verified)
+    if (verified) {
+      handleShare()
+    }
   }
 
+
   const handleShare = async () => {
-    if (showRecaptcha && !recaptchaToken) {
-      setErrorMessage("Please complete the reCAPTCHA verification")
+    if (showChallenge && !isVerified) {
       return
     }
 
     setShareStatus("loading");
     try {
-      const link = await shareSnippet(files, recaptchaToken)
+      const link = await shareSnippet(files)
       await navigator.clipboard.writeText(link);
       setShareStatus("shared");
-      setShowRecaptcha(false)
-      setRecaptchaToken("")
-
+      setShowChallenge(false)
+      setIsVerified(false)
     } catch (error) {
       console.error("Error sharing snippet:", error);
       setShareStatus("error")
       setErrorMessage(error instanceof Error ? error.message : "Failed to share snippet")
-
-      if (error instanceof Error && error.message.includes("reCAPTCHA")) {
-        setShowRecaptcha(true)
-      }
     }
     setTimeout(() => {
       if (shareStatus === "shared" || shareStatus === "error") {
@@ -81,6 +79,11 @@ export function CodeEditor({
       }
     }, 3000)
   };
+
+  const initiateShare = () => {
+    setShowChallenge(true)
+  }
+
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(files[activeFileIndex].content);
@@ -163,39 +166,20 @@ export function CodeEditor({
       <ActionButtons
         isReadOnly={isReadOnly}
         onCopy={handleCopy}
-        onShare={handleShare}
+        onShare={showChallenge ? handleShare : initiateShare}
         copyStatus={copyStatus}
         shareStatus={shareStatus}
       />
 
-      {showRecaptcha && !isReadOnly && (
-        <div className="border-t border-zinc-800 p-4">
-          <ReCaptcha siteKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""} onChange={handleRecaptchaChange} />
-          {errorMessage && (
-            <div className="flex items-center justify-center text-red-500 text-xs mt-2">
-              <AlertCircle className="h-3 w-3 mr-1" />
-              {errorMessage}
-            </div>
-          )}
-          <div className="flex justify-center mt-2">
-            <button
-              onClick={handleShare}
-              className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs rounded px-4 py-2 focus:outline-none"
-              disabled={!recaptchaToken || shareStatus === "loading"}
-            >
-              {shareStatus === "loading" ? "Sharing..." : "Confirm Share"}
-            </button>
-          </div>
-        </div>
-      )}
+      {showChallenge && !isReadOnly && <SecurityChallenge onVerify={handleVerify} />}
 
-      {shareStatus === "error" && !showRecaptcha && (
+      {shareStatus === "error" && (
         <div className="flex items-center justify-center text-red-500 text-xs p-2 border-t border-zinc-800">
           <AlertCircle className="h-3 w-3 mr-1" />
           {errorMessage || "Failed to share snippet. Please try again."}
         </div>
       )}
-      
+
       <CodeMirror
         value={files[activeFileIndex].content}
         height="400px"
